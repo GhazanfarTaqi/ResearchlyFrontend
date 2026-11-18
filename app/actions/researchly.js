@@ -2,20 +2,12 @@
 
 import { auth } from "@clerk/nextjs/server";
 
-const API_URL = process.env.BACKEND_API_URL;
+const API_URL =
+  process.env.BACKEND_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://researchlybackend.onrender.com";
 const INTERNAL_API_KEY =
   process.env.INTERNAL_API_KEY;
-
-if (!API_URL) {
-  throw new Error(
-    "BACKEND_API_URL is not configured."
-  );
-}
-if (!INTERNAL_API_KEY) {
-  throw new Error(
-    "INTERNAL_API_KEY is not configured."
-  );
-}
 
 async function getAuthenticatedUserId() {
   const { userId } = await auth();
@@ -26,9 +18,34 @@ async function getAuthenticatedUserId() {
 }
 
 async function apiRequest(path, options = {}) {
+  if (!API_URL) {
+    throw new Error(
+      "BACKEND_API_URL is not configured in the frontend deployment."
+    );
+  }
+  if (!INTERNAL_API_KEY) {
+    throw new Error(
+      "INTERNAL_API_KEY is not configured in the frontend deployment."
+    );
+  }
+
+  let baseUrl;
+  try {
+    baseUrl = new URL(API_URL);
+  } catch {
+    throw new Error(
+      "BACKEND_API_URL is invalid."
+    );
+  }
+  if (!["http:", "https:"].includes(baseUrl.protocol)) {
+    throw new Error(
+      "BACKEND_API_URL must use HTTP or HTTPS."
+    );
+  }
+
   let response;
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await fetch(`${baseUrl.toString().replace(/\/$/, "")}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -36,6 +53,7 @@ async function apiRequest(path, options = {}) {
         ...options.headers,
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(30000),
     });
   } catch {
     throw new Error(
