@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ['192.168.56.1', 'https://researchlyfrontend.vercel.app'],
   async headers() {
     return [
       {
