@@ -26,15 +26,22 @@ async function getAuthenticatedUserId() {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Internal-API-Key": INTERNAL_API_KEY,
-      ...options.headers,
-    },
-    cache: "no-store",
-  });
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-API-Key": INTERNAL_API_KEY,
+        ...options.headers,
+      },
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(
+      "Could not reach the Researchly backend."
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
 
